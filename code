@@ -1,0 +1,40 @@
+#!/bin/bash
+
+# Prompt the user for directories or files to backup
+echo "Enter the directories or files you want to backup (separate multiple entries with spaces):"
+read backup_items
+
+# Prompt the user for the backup location
+echo "Enter the location where you want to save the backups:"
+read backup_location
+
+# Prompt the user for the backup schedule
+echo "Enter the backup schedule (e.g. daily, weekly, monthly):"
+read backup_schedule
+
+# Create a cron job to run the backup script according to the user's schedule
+case $backup_schedule in
+    daily)
+        cron_schedule="0 0 * * *"
+        ;;
+    weekly)
+        cron_schedule="0 0 * * 0"
+        ;;
+    monthly)
+        cron_schedule="0 0 1 * *"
+        ;;
+    *)
+        echo "Invalid backup schedule. Please enter daily, weekly, or monthly."
+        exit 1
+        ;;
+esac
+
+# Create the backup script
+echo "#!/bin/bash" > backup_script.sh
+echo "tar -czf $backup_location/backup_$(date +%Y%m%d).tar.gz $backup_items" >> backup_script.sh
+chmod +x backup_script.sh
+
+# Add the backup script to the user's crontab
+(crontab -l 2>/dev/null; echo "$cron_schedule $PWD/backup_script.sh") | crontab -
+
+echo "Backup script created and added to crontab. Backups will be created $backup_schedule at $backup_location."
